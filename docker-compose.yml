@@ -1,0 +1,132 @@
+services:
+  db:
+    image: mariadb:10.6
+    container_name: wordpress_db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: root_password
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wpuser
+      MARIADB_PASSWORD: wppass
+    volumes:
+      - ./data/db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot_password"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  wordpress:
+    build: ./wordpress
+    image: ctf-vengeance-wordpress
+    container_name: wordpress_rh
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+      WORDPRESS_DB_HOST: db:3306
+      WP_URL: http://localhost:8000
+      WP_TITLE: TechCorp RH
+      WP_ADMIN_USER: admin
+      WP_ADMIN_PASS: admin_password
+      WP_ADMIN_EMAIL: admin@techcorp.com
+      WP_RH_PASS: rh_password
+      ENABLE_SSRF_HINT: "0"
+    ports:
+      - "8000:80"
+    volumes:
+      - ./wordpress/wp-config.php:/var/www/html/wp-config.php
+      - ./wordpress/content:/usr/src/ctf/content:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost/wp-login.php >/dev/null || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  ssrf-service:
+    build:
+      context: ./ssrf-service
+    image: ctf-vengeance/ssrf-service:latest
+    container_name: ssrf_service
+    networks: [ctf_net]
+    ports:
+      - "3000:3000"
+    depends_on:
+      - internal-secrets
+    environment:
+      INTERNAL_FETCH_TOKEN: import-service
+      ALLOW_HOSTS: jump-redirect,jump_redirect
+      REDIRECTOR_BASE: http://jump-redirect:3002/jump
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  internal-secrets:
+    build:
+      context: ./internal-secrets
+    image: ctf-vengeance/internal-secrets:latest
+    container_name: internal_secrets
+    networks: [ctf_net]
+    environment:
+      INTERNAL_FETCH_TOKEN: import-service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  jump-redirect:
+    build: { context: ./jump-redirect }
+    image: ctf-vengeance/jump:latest
+    container_name: jump_redirect
+    networks: [ctf_net]
+    ports: ["3002:3002"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  panel:
+    build: { context: ./panel }
+    image: ctf-vengeance/panel:latest
+    container_name: panel
+    networks: [ctf_net]
+    ports: ["3001:3001"]
+    environment:
+      PANEL_TOKEN: pm_token_7c0d3b9b2a
+      INTERNAL_FETCH_TOKEN: import-service
+      SSTI_URL: http://templates:5000/render
+      NEXT_TELEMETRY_DISABLED: "1"
+      ADMIN_TOKEN_TTL_MS: "60000" 
+      PORT: "3001"
+    depends_on:
+      - templates
+
+  templates:
+    build: { context: ./templates-service }
+    image: ctf-vengeance/templates:latest
+    container_name: templates
+    networks: [ctf_net]
+    environment:
+      INTERNAL_FETCH_TOKEN: import-service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+networks:
+  ctf_net:
+    driver: bridge

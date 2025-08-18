@@ -1,0 +1,33 @@
+**/__pycache__/
+**/myenv
+**/venv/
+*.pyc
+/volumes
+volumes/
+package-lock.json
+package-lock*
+/frontend/package-lock.json
+
+# --- Docker volumes / DB ---
+data/db/
+data/mysql/
+data/postgres/
+
+# --- WordPress runtime (ajuste conforme seu projeto) ---
+wordpress/wp-content/uploads/
+wordpress/wp-content/cache/
+wordpress/wp-content/upgrade/
+wordpress/wp-content/debug.log
+
+# --- Node / PHP / Python comuns ---
+node_modules/
+vendor/
+.env
+.env.*
+*.log
+.DS_Store
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+EOF
