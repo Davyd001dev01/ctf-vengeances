@@ -1,0 +1,120 @@
+/*
+Theme Name: TechCorp (CTF)
+Theme URI: https://example.local/techcorp
+Author: CTF Team
+Version: 1.0.0
+Description: Child theme para fixar a homepage do CTF.
+Template: twentytwentyfour
+Requires at least: 6.4
+Text Domain: techcorp
+*/
+
+/* --- Navbar look & feel --- */
+
+/* --- Navbar look & feel --- */
+.tc-navbar {
+  background: linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
+  border-bottom: 1px solid #dbe7ff;
+}
+.is-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: saturate(120%) blur(6px);
+}
+
+.tc-nav-container .wp-block-group__inner-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 20px;
+}
+
+.tc-logo { margin: 0; line-height: 1; }
+.tc-logo-link {
+  text-decoration: none;
+  color: #2a63ff;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+/* menu */
+.tc-nav-menu {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tc-nav-menu a {
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #0b2f4a;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.tc-nav-menu a:hover,
+.tc-nav-menu a:focus-visible {
+  background: #eef4ff;
+  color: #123c6a;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(42,99,255,.12) inset;
+}
+
+/* botão login */
+.tc-btn-login .wp-block-button__link {
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 700;
+  background: linear-gradient(180deg, #2a63ff 0%, #1f53f3 100%);
+  border: 1px solid #1e4fe9;
+  box-shadow: 0 6px 14px rgba(33,86,255,.18);
+}
+.tc-btn-login .wp-block-button__link:hover,
+.tc-btn-login .wp-block-button__link:focus-visible {
+  filter: brightness(1.04);
+  outline: none;
+}
+
+/* acessibilidade: conteúdo só para leitores de tela */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+/* dica discreta: aparece apenas no foco (teclado) */
+.is-hinted[data-hint]::after,
+.tc-logo-link[data-hint]::after {
+  content: attr(data-hint);
+  position: absolute;
+  transform: translateY(calc(100% + 8px));
+  left: 0;
+  font-size: 11px;
+  color: #6a7aa3;
+  background: #f7faff;
+  border: 1px solid #e3ecff;
+  padding: 4px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease;
+}
+.is-hinted:focus-visible::after,
+.tc-logo-link:focus-visible::after {
+  opacity: 1;
+}
+
+/* não navegar de verdade (mas mantendo tooltip/title) */
+.tc-nav-menu a[aria-disabled="true"],
+.tc-logo-link[aria-disabled="true"],
+.tc-btn-login .wp-block-button__link[aria-disabled="true"] {
+  cursor: default;
+}
+
+
+

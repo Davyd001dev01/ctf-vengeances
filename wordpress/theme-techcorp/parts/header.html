@@ -1,0 +1,115 @@
+<!-- wp:group {"align":"full","className":"tc-navbar is-sticky"} -->
+<div class="wp-block-group alignfull tc-navbar is-sticky">
+  <style>
+    .tc-navbar {
+      background: linear-gradient(180deg, #fff 0%, #f4f7ff 100%);
+      border-bottom: 1px solid #dbe7ff
+    }
+
+    .tc-navbar .tc-nav {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px
+    }
+
+    .tc-logo {
+      margin-right: auto;
+      text-decoration: none;
+      color: #2a63ff;
+      font-weight: 800;
+      letter-spacing: .2px
+    }
+
+    .tc-menu {
+      display: flex;
+      gap: 8px;
+      list-style: none;
+      margin: 0;
+      padding: 0
+    }
+
+    .tc-menu a {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #0b2f4a;
+      transition: background .15s ease, color .15s ease
+    }
+
+    .tc-menu a:hover {
+      background: #eef4ff;
+      color: #123c6a
+    }
+
+    .tc-btn {
+      margin-left: 16px;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-weight: 700;
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(180deg, #2a63ff 0%, #1f53f3 100%);
+      border: 1px solid #1e4fe9;
+      box-shadow: 0 6px 14px rgba(33, 86, 255, .18)
+    }
+
+    .tc-btn:hover {
+      filter: brightness(1.04)
+    }
+
+    .has-hint {
+      position: relative;
+      outline: none
+    }
+
+    .has-hint[data-hint]::after {
+      content: attr(data-hint);
+      position: absolute;
+      left: 0;
+      top: calc(100% + 8px);
+      font-size: 11px;
+      color: #6a7aa3;
+      background: #f7faff;
+      border: 1px solid #e3ecff;
+      padding: 4px 6px;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .15s ease
+    }
+
+    .has-hint:focus-visible::after {
+      opacity: 1
+    }
+
+    .no-nav {
+      cursor: default
+    }
+  </style>
+
+  <div class="tc-nav">
+    <a href="#" role="button" aria-disabled="true" class="tc-logo has-hint no-nav" data-hint="Dica: Plugin">
+      TechCorp
+    </a>
+
+    <ul class="tc-menu" aria-label="Menu principal">
+      <li><a href="#" role="button" aria-disabled="true" class="no-nav">Início</a></li>
+      <li><a href="#" role="button" aria-disabled="true" class="no-nav">Sobre</a></li>
+      <li><a href="#" role="button" aria-disabled="true" class="no-nav">Carreiras</a></li>
+      <li><a href="#" role="button" aria-disabled="true" class="no-nav">Benefícios</a></li>
+      <li><a href="#" role="button" aria-disabled="true" class="no-nav">Localizações</a></li>
+      <li><a href="#" role="button" aria-disabled="true" class="no-nav">Contato</a></li>
+    </ul>
+
+    <a href="#" role="button" aria-disabled="true" class="tc-btn has-hint no-nav"
+      data-hint='A chave pode estar na sua cara → "KICSNM JXFTNL USTJKMVF"'>
+      Portal do Colaborador
+    </a>
+  </div>
+</div>
+<!-- /wp:group -->

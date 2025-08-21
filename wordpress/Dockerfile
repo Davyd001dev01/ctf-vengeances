@@ -23,6 +23,9 @@ RUN mkdir -p /var/www/html/wp-content/mu-plugins \
  && cp -r /usr/src/mu-plugins/* /var/www/html/wp-content/mu-plugins/ \
  && chown -R www-data:www-data /var/www/html/wp-content/mu-plugins
 
+COPY theme-techcorp /usr/src/ctf/theme-techcorp
+
+
 # Configs e scripts
 COPY wp-config.php /var/www/html/
 COPY init.sh /usr/local/bin/init.sh

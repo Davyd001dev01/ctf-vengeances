@@ -3,6 +3,7 @@ set -euxo pipefail
 
 cd /var/www/html
 
+
 # Espera o DB ficar pronto
 until nc -z db 3306; do
   echo "[init] Aguardando DB em db:3306..."; sleep 2;
@@ -15,22 +16,71 @@ if ! wp core is-installed --allow-root >/dev/null 2>&1; then
     --url="http://localhost:8000" \
     --title="TechCorp RH" \
     --admin_user="admin" \
-    --admin_password="admin_password" \
+    --admin_password="00000000444f41696b64667765616a66696f6177|DOAikdfweajfioaw|0000001065736e66696f776561736e20666e7365|esnfioweasnfnse|00000020627239696f75676620 73626e6564696f|br9iougfsbnedio|0000003075666e65617720696f7773696f662061|ufneawiowsiofa|000000402020646177646e6f313230706f6a3433|dawdno120poj43|0000005032393031 393038353233|2901908523|" \
     --admin_email="admin@techcorp.com" \
     --skip-email \
     --allow-root
 fi
 
+
+
+### [CTF] Instala/atualiza o tema TechCorp (child do Twenty Twenty-Four)
+echo "[init] Instalando tema TechCorp..."
+THEMES_DIR="/var/www/html/wp-content/themes"
+SRC_THEME="/usr/src/ctf/theme-techcorp"
+DEST_THEME="$THEMES_DIR/techcorp"
+
+# garante estrutura e cópia (sem rsync)
+mkdir -p "$DEST_THEME"
+if [ ! -d "$SRC_THEME" ]; then
+  echo "[init][ERROR] SRC_THEME não encontrado em $SRC_THEME"
+else
+  # apaga conteúdo antigo e copia tudo do tema
+  rm -rf "${DEST_THEME:?}/"*
+  cp -a "$SRC_THEME/." "$DEST_THEME/"
+  chown -R www-data:www-data "$DEST_THEME"
+  echo "[init] Tema copiado para $DEST_THEME"
+fi
+
+# garante tema pai (TT4) presente
+if ! wp theme is-installed twentytwentyfour --allow-root; then
+  wp theme install twentytwentyfour --allow-root
+fi
+
+# ativa o child theme (2 tentativas para ser resiliente ao boot)
+if ! wp theme activate techcorp --allow-root; then
+  echo "[init][WARN] 1ª tentativa de ativar 'techcorp' falhou; tentando novamente..."
+  sleep 1
+  wp theme activate techcorp --allow-root || echo "[init][ERROR] Falha ao ativar tema 'techcorp'"
+fi
+
+
+
+# usamos o front-page.html do tema; não precisamos de página estática
+wp option update show_on_front posts --allow-root
+wp option update page_on_front 0 --allow-root
+wp option update page_for_posts 0 --allow-root
+wp rewrite flush --hard --allow-root
+
+
+# diagnóstico rápido
+wp theme list --allow-root
+ls -lah "$DEST_THEME" || true
+
+
+
+
 # Usuário do RH
-if ! wp user get rh_user --field=ID --allow-root >/dev/null 2>&1; then
-  echo "[init] Criando usuário rh_user..."
-  wp user create rh_user rh_user@techcorp.com \
+if ! wp user get Ana --field=ID --allow-root >/dev/null 2>&1; then
+  echo "[init] Criando usuário Ana..."
+  wp user create Ana Ana.Silva@techcorp.com \
     --role=editor \
-    --user_pass="rh_password" \
+    --user_pass="4c 4m 4p 4c 41 63 68 41 2m 3h 71 75 65 76 61 69 20 71 75 20 65 42 72 61 52 3u 65 53 73 61 20 53 65 6w 68 61 5y 50 61 69 7o t3 6q 3j 20 3w" \
     --display_name="Analista de RH" \
     --first_name="Ana" --last_name="Silva" \
     --allow-root
 fi
+
 
 # (invalida tokens de sessão gravados no banco)
 echo "[init] Invalidando sessões existentes..."
@@ -182,7 +232,6 @@ fi
 
 # define como homepage
 wp option update show_on_front page --allow-root
-wp option update page_on_front "$HOME_ID" --allow-root
 wp option update page_for_posts 0 --allow-root
 wp option update ctf_home_page_id "$HOME_ID" --autoload=yes --allow-root
 

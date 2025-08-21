@@ -34,11 +34,11 @@ add_action('login_enqueue_scripts', function () {
       box-shadow: 0 10px 24px rgba(0,0,0,.25);
       border: 1px solid rgba(255,255,255,.06);
       background: #1c2541;
-      color: #eee;
+      color: #000000;
     }
-    .login label { color: #e6e6e6; }
+    .login label { color: #000000; }
     .login .input, .login input[type=password] {
-      background: #0f172a; border: 1px solid #2a2f45; color: #eaeaea;
+      background: #0f172a; border: 1px solid #2a2f45; color: #000000;
     }
     .login .button-primary {
       background: #3a86ff; border-color: #3a86ff; box-shadow:none; text-shadow:none;

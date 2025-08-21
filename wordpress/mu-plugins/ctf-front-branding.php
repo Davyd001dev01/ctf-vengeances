@@ -15,23 +15,6 @@ add_action('wp_enqueue_scripts', function () {
     scroll-behavior: smooth;
   }
   
-  /* Fundo animado profissional */
-  body:before {
-    content: "";
-    position: fixed;
-    inset: -50% -50% -50% -50%;
-    background: 
-      radial-gradient(800px 800px at 0% 0%, rgba(37, 99, 235, 0.12), transparent 70%),
-      radial-gradient(600px 600px at 100% 0%, rgba(59, 130, 246, 0.08), transparent 60%),
-      radial-gradient(700px 700px at 100% 100%, rgba(99, 102, 241, 0.10), transparent 65%),
-      radial-gradient(500px 500px at 0% 100%, rgba(37, 99, 235, 0.14), transparent 55%),
-      linear-gradient(135deg, rgba(249, 250, 251, 0.95) 0%, rgba(243, 244, 246, 0.98) 100%);
-    filter: blur(60px);
-    animation: tc-pan 60s ease-in-out infinite;
-    z-index: -1;
-    pointer-events: none;
-  }
-  
   @keyframes tc-pan {
     0%, 100% { transform: translate3d(-3%, -2%, 0) scale(1.02) rotate(0deg); }
     25% { transform: translate3d(2%, -3%, 0) scale(1.03) rotate(90deg); }
@@ -679,6 +662,38 @@ add_action('wp_enqueue_scripts', function () {
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* 1) Remove blur + animação do fundo fixo */
+  body::before{
+    filter: none !important;
+    animation: none !important;
+    inset: 0 !important;            /* evita pintar área 4x maior que a viewport */
+  } 
+
+  /* 2) Remove todos os backdrop-filters e usa vidro “falso” (leve) */
+  .tc-hero,
+  .tc-stats,
+  .tc-card,
+  .tc-job-card,
+  .tc-benefit-card,
+  .tc-location-card,
+  .tc-contact-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* background: rgba(255,255,255,0.88) !important; */
+    box-shadow: 0 8px 24px rgba(16,24,40,.08) !important;
+    border: 1px solid rgba(226,232,240,.7) !important;
+  }
+
+  @media (max-width: 768px) {
+    * { transition: none !important; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+
   CSS;
 
   wp_register_style('ctf-front-branding-final', false);
