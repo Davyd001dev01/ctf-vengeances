@@ -12,7 +12,7 @@ function ctfb_assets_url($path = '') {
 
 // CSS no login (cores, logo, tipografia)
 add_action('login_enqueue_scripts', function () {
-  $logo = esc_url( ctfb_assets_url('assets/logo-rh.svg') ); // troque pelo seu arquivo
+  $logo = esc_url( ctfb_assets_url('assets/logo-rh.svg') ); 
   echo '<style>
     body.login {
       background: #0b132b;
@@ -55,18 +55,15 @@ add_action('login_enqueue_scripts', function () {
   </style>';
 });
 
-// Mensagem de aviso de RH (não interfere no formulário/2FA)
 add_filter('login_message', function ($msg) {
   $html = '<div class="ctfb-banner"><strong>TechCorp RH</strong> — Acesso restrito a colaboradores. '
         . 'Tentativas são auditadas para fins de segurança e treinamento.</div>';
   return $html . $msg;
 });
 
-// Link e título do logo
-add_filter('login_headerurl', fn() => home_url('/'));
+add_filter('login_headerurl', fn() => home_url('https://nvd.nist.gov/vuln/detail/cve-????-?????'));
 add_filter('login_headertext', fn() => 'TechCorp RH');
 
-// Telemetria leve (vai para error_log do PHP)
 add_action('wp_login_failed', function ($username){
   error_log('[CTF] login_failed user='.$username.' ip='.($_SERVER['REMOTE_ADDR'] ?? ''));
 });

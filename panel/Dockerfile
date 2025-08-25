@@ -2,8 +2,7 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 # se tiver package-lock.json, copie também para ativar npm ci
-COPY package.json ./
-# tenta npm ci; se não houver lock, cai em npm install
+COPY package*.json ./
 RUN npm ci --omit=dev || npm install --omit=dev
 
 FROM node:20-alpine AS build

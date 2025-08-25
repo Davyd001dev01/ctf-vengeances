@@ -4,7 +4,7 @@ const app = express()
 const PORT = process.env.PORT || 4000
 
 const SECRET = {
-  token: "pm_token_7c0d3b9b2a",
+  token: "pm_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0ZWNob3JwLXBtIiwiYXVkIjoicGFuZWwiLCJzdWIiOiJyaF91c2VyIiwic2NvcGUiOiJwYW5lbDpyZWFkIHRlbXBsYXRlczp3cml0ZSIsImlhdCI6MTcyMzU5MzYwMCwiZXhwIjoxOTEwMDAwMDAwLCJqdGkiOiI3YzBkM2I5YjJhIn0.KBTCMRW_A2Qpyew16Q4OD6gIBri2LuZx7fq1VYUyyro",
   panel_url: "http://panel:3001",
   hint_header: "X-Middleware-Bypass: panel-internal",
 }
