@@ -1,22 +1,32 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 
-const TOKEN =  "pm_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0ZWNob3JwLXBtIiwiYXVkIjoicGFuZWwiLCJzdWIiOiJyaF91c2VyIiwic2NvcGUiOiJwYW5lbDpyZWFkIHRlbXBsYXRlczp3cml0ZSIsImlhdCI6MTcyMzU5MzYwMCwiZXhwIjoxOTEwMDAwMDAwLCJqdGkiOiI3YzBkM2I5YjJhIn0.KBTCMRW_A2Qpyew16Q4OD6gIBri2LuZx7fq1VYUyyro"
+// Bypass CVE (Next.js) — só quando o próprio Next marcar subrequest interno
+const BYPASS_HEADER = "x-middleware-subrequest"
 
-export function middleware(req: NextRequest) {
-  const bypass =
-    req.headers.get("x-middleware-subrequest") === "1" || 
-    req.headers.get("x-middleware-bypass") === "panel-internal" 
+// Caminho “legítimo”: header com token que você obteve via SSRF
+const TOKEN_HEADER = "x-pm-token"
+const EXPECTED = process.env.PANEL_EXPECTED_TOKEN ?? "__MISSING__"
 
-  if (bypass) return NextResponse.next()
-
-  const auth = req.headers.get("authorization") || ""
-  const ok = auth === `Bearer ${TOKEN}`
-  if (!ok) return new NextResponse("Forbidden", { status: 403 })
-  return NextResponse.next()
+export const config = {
+  matcher: ["/admin/:path*", "/templates/:path*"],
 }
 
-// proteja admin, templates e API (e deixe / público)
-export const config = {
-  matcher: ["/admin/:path*", "/templates/:path*", "/api/:path*"],
+export function middleware(req: NextRequest) {
+  const isCveBypass = req.headers.get(BYPASS_HEADER) === "1"
+  const presented = req.headers.get(TOKEN_HEADER) ?? ""
+
+  const allowed = isCveBypass || (presented && presented === EXPECTED)
+
+  if (!allowed) {
+    // Cabeçalho de diagnóstico p/ confirmar que o middleware rodou
+    return new NextResponse("Forbidden", {
+      status: 403,
+      headers: { "x-gate": "blocked" },
+    })
+  }
+
+  return NextResponse.next({
+    headers: new Headers({ "x-gate": "ok" }),
+  })
 }

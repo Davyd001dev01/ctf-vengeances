@@ -1,21 +1,27 @@
-# panel/Dockerfile
+# -------- Deps --------
 FROM node:20-alpine AS deps
 WORKDIR /app
-# se tiver package-lock.json, copie também para ativar npm ci
-COPY package*.json ./
-RUN npm ci --omit=dev || npm install --omit=dev
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
+# -------- Build --------
 FROM node:20-alpine AS build
 WORKDIR /app
+ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
+# -------- Runner --------
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
+
+# A saída 'standalone' inclui o server.js e os arquivos rastreados
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+
 EXPOSE 3001
-CMD ["sh","-lc","PORT=${PORT:-3001} node server.js"]
+CMD ["node", "server.js"]

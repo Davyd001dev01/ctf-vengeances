@@ -1,3 +1,8 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = { output: "standalone" }
+const nextConfig = {
+  reactStrictMode: true,
+  experimental: { appDir: true },
+  output: "standalone",
+}
+
 export default nextConfig
