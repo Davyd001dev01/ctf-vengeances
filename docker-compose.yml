@@ -65,6 +65,7 @@ services:
       INTERNAL_FETCH_TOKEN: import-service
       ALLOW_HOSTS: jump-redirect,jump_redirect
       REDIRECTOR_BASE: http://jump-redirect:3002/jump
+      FOLLOW_REDIRECTS_ONCE: "true"
 
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/healthz"]
@@ -105,7 +106,7 @@ services:
     networks: [ctf_net]
     ports: ["3001:3001"]
     environment:
-      PANEL_EXPECTED_TOKEN: pm_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0ZWNob3JwLXBtIiwiYXVkIjoicGFuZWwiLCJzdWIiOiJyaF91c2VyIiwic2NvcGUiOiJwYW5lbDpyZWFkIHRlbXBsYXRlczp3cml0ZSIsImlhdCI6MTcyMzU5MzYwMCwiZXhwIjoxOTEwMDAwMDAwLCJqdGkiOiI3YzBkM2I5YjJhIn0.KBTCMRW_A2Qpyew16Q4OD6gIBri2LuZx7fq1VYUyyro
+      PANEL_TOKEN: pm_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0ZWNob3JwLXBtIiwiYXVkIjoicGFuZWwiLCJzdWIiOiJyaF91c2VyIiwic2NvcGUiOiJwYW5lbDpyZWFkIHRlbXBsYXRlczp3cml0ZSIsImlhdCI6MTcyMzU5MzYwMCwiZXhwIjoxOTEwMDAwMDAwLCJqdGkiOiI3YzBkM2I5YjJhIn0.KBTCMRW_A2Qpyew16Q4OD6gIBri2LuZx7fq1VYUyyro
       INTERNAL_FETCH_TOKEN: import-service
       SSTI_URL: http://templates:5000/render
       NEXT_TELEMETRY_DISABLED: "1"

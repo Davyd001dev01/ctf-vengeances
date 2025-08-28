@@ -1,164 +1,130 @@
-import express from "express"
-import fetch from "node-fetch"
-import dns from "node:dns/promises"
-import net from "node:net"
+// SSRF "criativo": allowlist explícita + follow de 302 controlado + logs diegéticos
+// Compatível com as vars do seu compose: ALLOW_HOSTS, REDIRECTOR_BASE, INTERNAL_FETCH_TOKEN
+// Healthcheck em /healthz
 
-const app = express()
-const PORT = process.env.PORT || 3000
+const express = require('express');
+const fetch = require('node-fetch'); // npm i express node-fetch@2
+const { URL } = require('url');
 
-const PM_IMPORT_PATH = "/import"
-const PM_DOCS_PATH = "/.well-known/pm-config"
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-const ALLOW_HOSTS = new Set(
-  (process.env.ALLOW_HOSTS || "")
-    .split(",")
-    .map((h) => h.trim().toLowerCase())
-    .filter(Boolean)
-)
+// ===== Config "diegética" =====
+const ALLOW_HOSTS = (process.env.ALLOW_HOSTS || 'jump-redirect,jump_redirect')
+  .split(',')
+  .map(s => s.trim().toLowerCase());
 
-const BLOCK_HOSTS = new Set([
-  "localhost",
-  "127.0.0.1",
-  "::1",
-  "internal-secrets",
-  "panel",
-  "db",
-])
+const REDIRECTOR_BASE = process.env.REDIRECTOR_BASE || 'http://jump-redirect:3002/jump';
+const INTERNAL_FETCH_TOKEN = process.env.INTERNAL_FETCH_TOKEN || 'import-service';
 
-function isPrivateIP(ip) {
-  if (!ip) return false
-  if (net.isIPv4(ip)) {
-    const b = ip.split(".").map((n) => parseInt(n, 10))
-    const n = (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]
-    const inRange = (start, mask) => (n & mask) === start
-    // 10.0.0.0/8
-    if (inRange(0x0a000000, 0xff000000)) return true
-    // 172.16.0.0/12
-    if (inRange(0xac100000, 0xfff00000)) return true
-    // 192.168.0.0/16
-    if (inRange(0xc0a80000, 0xffff0000)) return true
-    // 127.0.0.0/8
-    if (inRange(0x7f000000, 0xff000000)) return true
-    // 169.254.0.0/16 (link-local)
-    if (inRange(0xa9fe0000, 0xffff0000)) return true
-    return false
-  }
-  // IPv6: ::1, fc00::/7 (ULA), fe80::/10 (link-local)
-  if (ip === "::1") return true
-  // Checagem simplificada por prefixo
-  if (ip.startsWith("fc") || ip.startsWith("fd") || ip.startsWith("fe80"))
-    return true
-  return false
+// Para facilitar o CTF (modo homolog): seguir 1x o redirect
+const FOLLOW_REDIRECTS_ONCE = (process.env.FOLLOW_REDIRECTS_ONCE || 'true') === 'true';
+
+const MAX_BODY_BYTES = parseInt(process.env.MAX_BODY_BYTES || '200000', 10); // 200 KB
+const TIMEOUT_MS = parseInt(process.env.TIMEOUT_MS || '4000', 10);
+
+const LOGS = [];
+function log(line) {
+  const ts = new Date().toISOString();
+  const msg = `[${ts}] ${line}`;
+  LOGS.push(msg);
+  if (LOGS.length > 300) LOGS.shift();
+  console.log(msg);
 }
 
-async function preflight(urlStr) {
-  let u
+// ===== Endpoints =====
+app.get('/healthz', (_req, res) => res.json({ ok: true, allow: ALLOW_HOSTS, follow: FOLLOW_REDIRECTS_ONCE }));
+
+// Logs diegéticos p/ o jogador conferir a cadeia
+app.get('/logs', (_req, res) => {
+  res.type('text/plain').send(LOGS.join('\n'));
+});
+
+// Import principal: GET /import?url=...
+app.get('/import', async (req, res) => {
+  const raw = req.query.url;
+  if (!raw) return res.status(400).json({ error: 'parâmetro obrigatório: url' });
+
+  let firstUrl;
   try {
-    u = new URL(urlStr)
+    firstUrl = new URL(raw);
   } catch {
-    return "invalid URL"
+    return res.status(400).json({ error: 'URL inválida' });
   }
-  if (!/^https?:$/.test(u.protocol)) return "scheme not allowed"
 
-  const host = (u.hostname || "").toLowerCase()
-  if (ALLOW_HOSTS.has(host)) return null
-  if (BLOCK_HOSTS.has(host)) return `blocked host: ${host}`
-
-  // resolve A/AAAA e barra redes privadas
-  try {
-    const addrs = [
-      ...(await dns.resolve4(host).catch(() => [])),
-      ...(await dns.resolve6(host).catch(() => [])),
-    ]
-    if (addrs.length === 0) {
-      // pode ser nome sem DNS (na rede Docker resolve) — deixa passar
-      return null
-    }
-    for (const ip of addrs) {
-      if (isPrivateIP(ip)) return `blocked private ip: ${ip}`
-    }
-  } catch (_) {
-    // falha de DNS não deve derrubar — deixa o fetch tentar
+  // Validar host inicial pela allowlist
+  const initialHost = firstUrl.hostname.toLowerCase();
+  if (!ALLOW_HOSTS.includes(initialHost)) {
+    log(`BLOCK host=${initialHost} reason=not-allowlisted url=${raw}`);
+    return res.status(403).json({
+      error: 'Host bloqueado: apenas jump-redirect/jump_redirect são permitidos.',
+      allowlist: ALLOW_HOSTS
+    });
   }
-  return null
-}
-
-app.get(PM_DOCS_PATH, (_req, res) => {
-  res.json({
-    importer: PM_IMPORT_PATH,
-    redirects_followed: true,
-    note: "Internal artifact ingestion. See / for quick usage.",
-  })
-})
-
-app.get("/", (_req, res) => {
-  const html = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>TechCorp PM Importer</title>
-
-  <!-- Metadados úteis para quem inspeciona o código-fonte -->
-  <meta name="pm-importer" content="${PM_IMPORT_PATH}?url=">
-  <meta name="pm-docs" content="${PM_DOCS_PATH}">
-  <link rel="pm-docs" href="${PM_DOCS_PATH}">
-  <meta property="og:pm:docs" content="${PM_DOCS_PATH}">
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "TechCorp PM Importer",
-    "applicationCategory": "DeveloperApplication",
-    "url": "${PM_IMPORT_PATH}",
-    "documentation": "${PM_DOCS_PATH}"
-  }
-  </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;max-width:720px;margin:48px auto;padding:0 16px;color:#222}</style>
-</head>
-<body>
-  <h3>TechCorp PM Importer</h3>
-  <p>Use <code>${PM_IMPORT_PATH}?url=...</code> for artifact ingestion.</p>
-  <p>Docs: <a href="${PM_DOCS_PATH}">${PM_DOCS_PATH}</a></p>
-</body>
-</html>`
-  res
-    .status(200)
-    .type("html")
-    .set({
-      "X-PM-Docs": PM_DOCS_PATH,
-      Link: `<${PM_DOCS_PATH}>; rel="preload"; as="fetch"; crossorigin`,
-    })
-    .send(html)
-})
-
-app.get("/healthz", (_req, res) => res.json({ ok: true }))
-
-app.get("/import", async (req, res) => {
-  const url = req.query.url
-  if (!url) return res.status(400).json({ error: "missing url" })
-
-  const reason = await preflight(url)
-  if (reason) return res.status(400).json({ error: reason })
 
   try {
-    const r = await fetch(url, {
-      redirect: "follow",
-      timeout: 8000,
-      headers: {
-        "X-Internal-Token":
-          process.env.INTERNAL_FETCH_TOKEN || "import-service",
-      },
-    })
-    const ct = r.headers.get("content-type") || "text/plain"
-    const body = await r.text()
-    res.status(200).set("content-type", ct).send(body)
+    // 1ª requisição: NÃO seguir redirecionamento automaticamente
+    const controller = new AbortController();
+    const to = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    const resp1 = await fetch(firstUrl.toString(), {
+      redirect: 'manual',
+      headers: { 'X-Internal-Fetch-Token': INTERNAL_FETCH_TOKEN },
+      signal: controller.signal
+    });
+
+    clearTimeout(to);
+
+    const isRedirect = [301, 302, 303, 307, 308].includes(resp1.status);
+    if (!isRedirect) {
+      const buf = await resp1.buffer();
+      const clipped = buf.slice(0, MAX_BODY_BYTES);
+      log(`FETCH ok host=${initialHost} status=${resp1.status} bytes=${clipped.length}`);
+      res.set('X-SSRF-Note', 'Fetch direto (sem redirecionamento).');
+      return res.status(200).send(clipped);
+    }
+
+    // Há redirecionamento
+    const location = resp1.headers.get('location');
+    if (!location) {
+      log(`REDIR missing-location from=${initialHost} status=${resp1.status}`);
+      return res.status(502).json({ error: 'Redirecionamento sem header Location.' });
+    }
+
+    const nextUrl = new URL(location, firstUrl); // resolve relativo
+    log(`REDIR detected from=${initialHost} to=${nextUrl.hostname} status=${resp1.status}`);
+
+    if (!FOLLOW_REDIRECTS_ONCE) {
+      return res.status(400).json({
+        error: 'Redirecionamento detectado: bloqueado (modo produção).',
+        note: 'Ative FOLLOW_REDIRECTS_ONCE=true para modo homolog.'
+      });
+    }
+
+    // 2ª requisição: seguir UMA vez (criatividade: permite alcançar serviços internos do lab)
+    const controller2 = new AbortController();
+    const to2 = setTimeout(() => controller2.abort(), TIMEOUT_MS);
+
+    const resp2 = await fetch(nextUrl.toString(), {
+      headers: { 'X-Internal-Fetch-Token': INTERNAL_FETCH_TOKEN },
+      signal: controller2.signal
+    });
+
+    clearTimeout(to2);
+
+    const buf2 = await resp2.buffer();
+    const clipped2 = buf2.slice(0, MAX_BODY_BYTES);
+
+    log(`FOLLOW ok from=${initialHost} to=${nextUrl.hostname} status=${resp2.status} bytes=${clipped2.length}`);
+    res.set('X-SSRF-Note', 'Redirecionamento detectado: seguindo (modo homolog).');
+    return res.status(200).send(clipped2);
   } catch (e) {
-    res.status(502).json({ error: "fetch failed", detail: String(e) })
+    log(`ERROR url=${raw} msg=${e.message}`);
+    return res.status(500).json({ error: 'falha ao importar', detail: e.message });
   }
-})
+});
 
 app.listen(PORT, () => {
-  console.log(`[ssrf-service] listening on :${PORT}`)
-})
+  console.log(`ssrf-service listening on :${PORT}`);
+  log(`ALLOW_HOSTS=${ALLOW_HOSTS.join(',')} FOLLOW_REDIRECTS_ONCE=${FOLLOW_REDIRECTS_ONCE} REDIRECTOR_BASE=${REDIRECTOR_BASE}`);
+});
