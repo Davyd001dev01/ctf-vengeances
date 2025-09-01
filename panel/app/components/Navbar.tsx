@@ -11,10 +11,12 @@ export default function Navbar() {
     { name: 'Teams', href: '/teams', active: false },
     { name: 'Reports', href: '/reports', active: false },
     { name: 'Settings', href: '/settings', active: false },
+    { name: 'Search', href: '/search', active: false },
+    { name: 'Report', href: '/report', active: false },
   ];
 
   return (
-    <nav className="tc-surface border-b border-[var(--tc-border)] sticky top-0 z-50 bg-gray-700">
+    <nav className="tc-surface border-b border-[var(--tc-border)] sticky top-0 z-50 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}

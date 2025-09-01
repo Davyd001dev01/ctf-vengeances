@@ -1,5 +1,4 @@
 // 302 helper controlado: GET /jump?to=http://internal-secrets:4000/metadata
-// Bloqueia esquemas perigosos, expõe /healthz, adiciona header diegético
 
 const express = require('express');
 const { URL } = require('url');

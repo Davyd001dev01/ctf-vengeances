@@ -32,7 +32,6 @@ function log(line) {
   console.log(msg);
 }
 
-// ===== Endpoints =====
 app.get('/healthz', (_req, res) => res.json({ ok: true, allow: ALLOW_HOSTS, follow: FOLLOW_REDIRECTS_ONCE }));
 
 // Logs diegéticos p/ o jogador conferir a cadeia
@@ -127,4 +126,5 @@ app.get('/import', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`ssrf-service listening on :${PORT}`);
   log(`ALLOW_HOSTS=${ALLOW_HOSTS.join(',')} FOLLOW_REDIRECTS_ONCE=${FOLLOW_REDIRECTS_ONCE} REDIRECTOR_BASE=${REDIRECTOR_BASE}`);
+  log(`ENGINE init engine=nossrf/1.4.3 followRedirectOnce=${FOLLOW_REDIRECTS_ONCE}`);
 });

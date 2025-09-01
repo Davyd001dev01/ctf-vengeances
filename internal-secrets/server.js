@@ -1,5 +1,4 @@
 // Endpoint interno com metadados e pistas do Ato III
-// Health em /healthz, dado em /metadata
 
 const express = require('express');
 const app = express();
@@ -14,7 +13,8 @@ app.get('/metadata', (_req, res) => {
     next_hint: {
       render_core: 'templates: jinja2; helpers: cycler, joiner',
       quickcheck: '{{7*7}}'
-    }
+    },
+    FLAG:'FLAG{ssrf_jump_redirect_internal_metadata_ok}'
   });
 });
 

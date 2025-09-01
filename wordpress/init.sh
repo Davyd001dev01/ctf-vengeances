@@ -153,6 +153,7 @@ PM_ALLOWED_HOSTS=techcorp.local
   <li>URLs de <em>loopback</em> podem ser bloqueadas por política.</li>
   <li>O importador segue redirecionamentos HTTP quando presente.</li>
   <li>Para testes, prefira endpoints HTTP simples.</li>
+  <li>FLAG{rh_takeover_check_login_and_get_user_ok}</li>
 </ul>
 HTML
 
